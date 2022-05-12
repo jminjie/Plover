@@ -36,3 +36,11 @@ $("#outputContainer").draggable({snap: true}).resizable({handles: 's',
 		$("#output").css({"height": (containerHeight - 50) +"px"});
 	}
 });
+
+piano(document.querySelector('#pianovisual'), {range: {
+  startKey: 'F',
+  startOctave: 3,
+  endKey: 'E',
+  endOctave: 5
+}});
+

@@ -29,3 +29,12 @@ textarea {
 body {
     zoom: 160%;
 }
+
+#pianovisual {
+    width: 900px;
+    height: 300px;
+    zoom: 70%;
+    position: absolute;
+    top:328px;
+    left:550px;
+}

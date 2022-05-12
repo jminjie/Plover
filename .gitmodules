@@ -1,0 +1,3 @@
+[submodule "beautiful-piano"]
+	path = beautiful-piano
+	url = https://github.com/musicjs/beautiful-piano.git

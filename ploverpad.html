@@ -7,14 +7,19 @@
 		<!-- import jquery stuff -->
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>
-  <script src="https://unpkg.com/pts@0.9.6/dist/pts.js"></script>
-  <script type="text/javascript" src="https://unpkg.com/tone"></script>
+      <script src="https://unpkg.com/pts@0.9.6/dist/pts.js"></script>
+      <script type="text/javascript" src="https://unpkg.com/tone"></script>
+      <script src="beautiful-piano/dist/piano.js"></script>
+
 
 		<!-- import style sheets -->
 		<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="ploverdemo.css">
+        <link rel="stylesheet" href="beautiful-piano/styles.css">
+
 	<style type="text/css">img[src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif"]
 {display:none !important;}</style></head>
+
 	<body>
 		<!-- area to show output -->
 		<div id="outputContainer" class="ui-draggable ui-resizable"><h1>Text</h1>
@@ -137,6 +142,8 @@
 				<div class="stdKey code17" id="stdKeyRightControl" style="background-color: rgb(0, 0, 0);">Ctrl</div>
 			</div>
 		<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001;"></div></div>
+
+        <div id="pianovisual"></div>
 
 
 		<!-- make elements draggable and resizable -->
