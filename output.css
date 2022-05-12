@@ -1,12 +1,12 @@
 #outputContainer {
 	/* Positioning */
 	position:absolute;
-	left: 0px;
+	left: 10px;
 	top: 0px;
 	
 	/* Box */
-	width: 600px;
-	height: 227px;
+	width: 400px;
+	height: 280px;
 	padding: 0;
 	border: 0;
 	margin: 0;

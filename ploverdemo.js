@@ -885,6 +885,177 @@ function VerticalNote(timestampParam, strokeParam) {
 	}
 }
 
+try {
+    navigator.requestMIDIAccess()
+        .then(onMIDISuccess, onMIDIFailure);
+} catch (e) {
+    console.log(e);
+}
+
+function onMIDIFailure() {
+      console.log('Could not access your MIDI devices.');
+}
+
+function onMIDISuccess(midiAccess) {
+    console.log(midiAccess);
+
+    var inputs = midiAccess.inputs;
+    var outputs = midiAccess.outputs;
+    var deviceInfoMessage = "List of devices: [";
+    for (var input of midiAccess.inputs.values()) {
+        deviceInfoMessage += input.name + ", ";
+        input.onmidimessage = onMidiMessage;
+    }
+    deviceInfoMessage += "]";
+    if (inputs.size > 0) {
+      console.log(deviceInfoMessage);
+    }
+}
+
+
+function onMidiMessage(message) {
+    var command = message.data[0];
+    var byte1 = message.data[1];
+    // a velocity value might not be included with a noteOff command
+    var byte2 = (message.data.length > 2) ? message.data[2] : 0;
+
+  if (command == 144) {
+    // keydown
+    doKeyDown(midiByteToKeyCode(byte1))
+    playMidiKeyDown(byte1, byte2);
+  } else if (command == 128) {
+    //keyup
+    doKeyUp(midiByteToKeyCode(byte1))
+    playMidiKeyUp(byte1);
+  } else if (command == 176) {
+    // pedal
+    if (byte2 == 127) {
+      // down
+      //doKeyDown(0)
+      playMidiPedalOn()
+    } else if (byte2 == 0) {
+      // up
+      //doKeyUp(0)
+      playMidiPedalOff()
+    }
+  }
+}
+
+BYTE_TO_KEYCODE = {
+// ORIGINAL
+  // vowels
+  60: 67,
+  62: 86,
+  64: 78,
+  65: 77,
+  // left bottom
+  59: 70,
+  57: 68,
+  55: 83,
+  53: 65,
+// END
+// LEFT SHIFTED
+//  // vowels
+//  59: 67,
+//  60: 86,
+//  64: 78,
+//  65: 77,
+//  // left bottom
+//  57: 70,
+//  55: 68,
+//  53: 83,
+//  52: 65,
+// END
+  // right bottom
+  67: 74,
+  69: 75,
+  71: 76,
+  72: 186,
+  74: 222,
+  // right top
+  66: 85,
+  68: 73,
+  70: 79,
+  73: 80,
+  75: 219,
+  // left top
+  58: 82,
+  56: 69,
+  54: 87,
+  // stars
+  63: 71,
+  61: 71
+}
+
+function midiByteToKeyCode(byte1) {
+  return BYTE_TO_KEYCODE[byte1];
+}
+
+const default_reverb = new Tone.Reverb(1.5).toDestination();
+
+var myGain = 1.0;
+var mySampler = new Tone.Sampler({
+  urls: {
+    A1: "A1.mp3",
+    A2: "A2.mp3",
+    A3: "A3.mp3",
+    A4: "A4.mp3",
+    A5: "A5.mp3",
+    A6: "A6.mp3",
+    A7: "A7.mp3",
+  },
+  release: 0.6,
+  baseUrl: "https://tonejs.github.io/audio/salamander/",
+}).connect(default_reverb).toDestination();
+
+function playMidiKeyDown(midiValue, velocity) {
+  let note = getNote(midiValue);
+  myPressedKeys.add(note);
+  mySampler.triggerAttack(note, Tone.context.currentTime, velocity*myGain/120)
+}
+
+function playMidiKeyUp(midiValue) {
+  let note = getNote(midiValue);
+  myPressedKeys.delete(note)
+  if (!myPedal) {
+    mySampler.triggerRelease(note, Tone.context.currentTime)
+  }
+}
+
+function playMidiPedalOff() {
+  myPedal = false;
+  let releaseKeys = getAllKeysWhichArentPressed();
+  mySampler.triggerRelease(releaseKeys, Tone.context.currentTime)
+}
+
+function playMidiPedalOn() {
+  myPedal = true;
+}
+
+var myPressedKeys = new Set()
+function getAllKeysWhichArentPressed() {
+  let toReturn = [];
+  for (let i = 0; i < ALL_KEYS.length; i++) {
+    if (!myPressedKeys.has(ALL_KEYS[i])) {
+      toReturn.push(ALL_KEYS[i]);
+    }
+  }
+  return toReturn;
+}
+
+var myPedal = false;
+var NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+var ALL_KEYS = []
+// A1 to C8
+for (let i = 21; i < 108; i++) {
+    ALL_KEYS.push(getNote(i));
+}
+function getNote(midiValue) {
+    let noteLetter = NOTES[midiValue%12];
+    let octave = Math.floor(midiValue/12)-1;
+    return noteLetter + octave;
+}
+
 
 // EVENT HANDLERS
 
@@ -897,34 +1068,43 @@ function VerticalNote(timestampParam, strokeParam) {
  * @see jQuery.isEmptyObjecy method: http://api.jquery.com/jQuery.isEmptyObject/
  */
 $(document).keydown(function (event) {
+  event.preventDefault();
+  doKeyDown(event.which);
+});
+
+
+const PEDAL_KEY = 0;
+
+function doKeyDown(which) {
 	// Check to see if this is the start of a new stroke.
 	if ($.isEmptyObject(downKeys)) { // if no keys were being pressed down before, this is the start of a new stroke.
 		resetKeys(); // so clear the keys before processing the event.
 	}
 
 	// Create a new Key Object based on the event.
-	var key = new Key(event.which);
+	var key = new Key(which);
+  console.log(which)
+  console.log(key)
 
 	// Update the appropriate lists
 	downKeys[key] = key; // add key to the list of keys currently being pressed down
-	chordKeys[key] = key; // add key to the list of keys in this stroke
+  if (which != PEDAL_KEY) {
+    chordKeys[key] = key; // add key to the list of keys in this stroke
+    // Update the display
+    $('.code' + key.getKeyCode()).css('background-color', '#ff0000'); // color the qwerty keyboard
+    colorCode(chordKeys); // color the steno keyboard
+    // See if this key is a valid steno key
+    if (!keyCodeToSteno[key.getKeyCode()]) { // if the key code does not have a steno tranlation
+      isSteno = false;
+      console.debug("Steno false on keydown");
+    }
+    if (which == 13) {
+      console.log("enter");
+      //words.push(new Word([
+    }
+  }
+}
 
-	// Update the display
-	$('.code' + key.getKeyCode()).css('background-color', '#ff0000'); // color the qwerty keyboard
-	colorCode(chordKeys); // color the steno keyboard
-
-	// See if this key is a valid steno key
-	if (!keyCodeToSteno[key.getKeyCode()]) { // if the key code does not have a steno tranlation
-		isSteno = false;
-		console.debug("Steno false on keydown");
-	}
-
-	
-	// Handle potential conflicts
-	// removed check for isSteno here to prevent "stop working after error" bug --Erika
-	event.preventDefault(); // will prevent potential conflicts with browser hotkeys like firefox's hotkey for quicklinks (')
-
-});
 
 /**
  * This will handle the key up event.
@@ -935,22 +1115,28 @@ $(document).keydown(function (event) {
  * @see jQuery.isEmptyObjecy method: http://api.jquery.com/jQuery.isEmptyObject/
  */
 $(document).keyup(function (event) {
+  event.preventDefault();
+  doKeyUp(event.which);
+});
+
+function doKeyUp(which) {
 	// Create a new Key Object based on the event.
-	var key = new Key(event.which);
+	var key = new Key(which);
 
 	// Update the appropriate lists
 	delete downKeys[key]; // remove key from the list of keys currently being pressed down
 
 	// Update the display
-	$('.stdKey.code' + event.which).css('background-color', '#000000'); // color the qwerty keyboard
+	$('.stdKey.code' + which).css('background-color', '#000000'); // color the qwerty keyboard
 
-	if (isSteno) {
+	if (isSteno || true) {
 		// Check to see if this is the end of the stroke.
 		if ($.isEmptyObject(downKeys)) { // if no more keys are being pressed down, this is the end of the stroke.
 			var timestamp = new Date();
 			var chord = new Chord(chordKeys);
 			var verticalNote = new VerticalNote(timestamp, chord);
 			var word = new Word([chord]);
+      console.log(chordKeys);
 
 			chords.push(chord);
 			verticalNotes.push(verticalNote);
@@ -970,19 +1156,23 @@ $(document).keyup(function (event) {
 			}
 			
 			translatedString = '';
-			for (i = 0; i < words.length; i++) {
-				translatedString += words[i].toEnglish() + ' ';
-			}
+      for (i = 0; i < words.length; i++) {
+        translatedString += words[i].toEnglish() + ' ';
+      }
+      /*
+      //remove space after newline
+      if (translatedString[translatedString.length - 2] == '\n') {
+        //words[words.length - 1] = '\n';
+        console.log('remove last char of "' + translatedString + '"');
+        translatedString = translatedString.slice(0, translatedString.length - 1);
+        console.log('"' + translatedString + '"');
+      }
+      */
 			$('#output').html(demetafy(translatedString));
 			document.getElementById('output').scrollTop = document.getElementById('output').scrollHeight; //scroll the textarea to the bottom
 		}
-
-	
-		// Handle potential conflicts
-		event.preventDefault();	// will prevent potential conflicts with browser hotkeys like firefox's hotkey for quicklinks (')
-		//event.stopPropagation();
 	}
-});
+}
 
 /**
  * This will handle the event when the window loses focus.

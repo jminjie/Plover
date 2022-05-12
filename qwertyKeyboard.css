@@ -1,7 +1,7 @@
 #stdKeyboard{
 	/* Positioning */
 	position:absolute;
-	left: 0px;
+	left: 370px;
 	top: 228px;
 	
 	/* Box */
@@ -13,6 +13,7 @@
 
 	/* Colors */
 	background-color: #ffffff;
+    display: none;
 }
 
 .stdRow {
