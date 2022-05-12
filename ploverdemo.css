@@ -25,3 +25,7 @@ textarea {
 	resize: none;
 	overflow: auto;
 }
+
+body {
+    zoom: 160%;
+}
