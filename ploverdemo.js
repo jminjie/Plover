@@ -1011,14 +1011,19 @@ var mySampler = new Tone.Sampler({
 function playMidiKeyDown(midiValue, velocity) {
   let note = getNote(midiValue);
   myPressedKeys.add(note);
-  mySampler.triggerAttack(note, Tone.context.currentTime, velocity*myGain/120)
-  document.querySelector('.' + note.replace('#', 's')).classList.add('active')
+  if (midiValue >= 53 && midiValue <= 76) {
+    document.querySelector('.' + note.replace('#', 's')).classList.add('active')
+  }
+  mySampler.triggerAttack(note, Tone.context.currentTime, Math.max(velocity, 20)*myGain/120)
 }
 
 function playMidiKeyUp(midiValue) {
   let note = getNote(midiValue);
   myPressedKeys.delete(note)
-  document.querySelector('.' + note.replace('#', 's')).classList.remove('active')
+  console.log(midiValue);
+  if (midiValue >= 53 && midiValue <= 76) {
+    document.querySelector('.' + note.replace('#', 's')).classList.remove('active')
+  }
   if (!myPedal) {
     mySampler.triggerRelease(note, Tone.context.currentTime)
   }
